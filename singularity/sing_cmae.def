@@ -1,0 +1,53 @@
+Bootstrap: docker
+From: nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+
+%environment
+    export PATH=/opt/conda/bin:$PATH
+    . /opt/conda/etc/profile.d/conda.sh
+    conda activate cmae
+
+%files
+    /media/gabriel/7739-DDF5/Gabriel/Projects/Doutoramento/methods/CMAE/ /CMAE_install
+
+%post
+    apt-get update && apt-get install -y \
+        wget bzip2 git curl build-essential \
+        && apt-get clean
+    
+    apt-get install ffmpeg libsm6 libxext6  -y
+
+    # Install Miniconda
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    bash miniconda.sh -b -p /opt/conda
+    rm miniconda.sh
+    export PATH=/opt/conda/bin:$PATH
+
+    # Initialize Conda
+    /opt/conda/bin/conda init bash
+    . /opt/conda/etc/profile.d/conda.sh
+
+    
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+
+
+    # Create conda environment with Python 3.11.4
+    conda create --name cmae python=3.9 -y
+    conda activate cmae
+
+    # Install PyTorch 2.0.1 with CUDA 11.8
+    pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu121
+
+    # Install dependencies
+    pip install boto3 addict tqdm regex pyyaml opencv-python opencv-contrib-python future tensorboard filelock yapf attrs einops opencv-python-headless scipy  mmcv==2.1.0 psutil mmengine timm==0.9.12 numpy==1.24.4 safetensors==0.3.3
+
+    cd /CMAE_install
+    pip install -v -e .
+
+
+
+%runscript
+    . /opt/conda/etc/profile.d/conda.sh
+    conda activate cmae
+    exec "$@"
